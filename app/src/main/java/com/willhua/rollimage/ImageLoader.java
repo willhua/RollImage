@@ -9,5 +9,5 @@ public interface ImageLoader {
 
     public void rollForward();
     public void rollBackward();
-    public void setBitmap(Bitmap[] bitmaps);
+    public void getBitmap(Bitmap[] bitmaps);
 }

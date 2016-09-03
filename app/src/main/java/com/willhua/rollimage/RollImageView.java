@@ -14,7 +14,7 @@ import android.view.View;
 public class RollImageView extends View {
 
 
-    private static final int SHOW_CNT = 4;
+    public static final int SHOW_CNT = 4;
     private static final int DEFALT_WIDHT = 200;
     private static final int DEFALT_HEIGHT = 120;
 
@@ -22,7 +22,7 @@ public class RollImageView extends View {
     private ImageLoader mImageLoader;
     private Bitmap[] mBitmaps; //bitmaps shown current
     private CellCalculator mCellCalculator;
-    private Cell[] mCells = new Cell[SHOW_CNT + 1];
+    private Cell[] mCells;
 
     //实际绘制区域大小
     private int mWidth = DEFALT_WIDHT;
@@ -34,10 +34,6 @@ public class RollImageView extends View {
     }
 
     private void dataInit() {
-        mBitmaps = new Bitmap[SHOW_CNT + 1];
-        mCells = new Cell[SHOW_CNT + 1];
-        mImageLoader = new DefaultImageLoader();
-        mCellCalculator = new DefaultCellCalculator();
     }
 
     @Override
@@ -66,6 +62,9 @@ public class RollImageView extends View {
             mWidth = width - paddX;
             mHeight = DEFALT_HEIGHT - paddY;
         }
+        if(mCellCalculator != null){
+            mCellCalculator.setDimen(mWidth, mHeight);
+        }
         LOG("onmeasure mwidth:" + mWidth + " mheight:" + mHeight);
     }
 
@@ -88,6 +87,7 @@ public class RollImageView extends View {
     public void setCellCalculator(CellCalculator cellCalculator) {
         if (cellCalculator != null) {
             mCellCalculator = cellCalculator;
+            mCellCalculator.setDimen(mWidth, mHeight);
         }
     }
 

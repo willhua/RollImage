@@ -18,7 +18,7 @@ public class DefaultImageLoader implements ImageLoader {
     }
 
     @Override
-    public void setBitmap(Bitmap[] bitmaps) {
+    public void getBitmap(Bitmap[] bitmaps) {
 
     }
 }

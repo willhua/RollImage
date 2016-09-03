@@ -30,6 +30,17 @@ public class Cell {
         mRectF.bottom += value;
     }
 
+    public void setHeight(float height){
+        mRectF.bottom = mRectF.top + height;
+    }
+
+    public void resetRect(){
+        mRectF.top = 0;
+        mRectF.bottom = 0;
+        mRectF.left = 0;
+        mRectF.right = 0;
+    }
+
     public void setRectF(RectF rectF){
         mRectF = rectF;
     }
@@ -38,7 +49,7 @@ public class Cell {
         mAlpha = alpha;
     }
 
-    public RectF getmRectF(){
+    public RectF getRectF(){
         return mRectF;
     }
 

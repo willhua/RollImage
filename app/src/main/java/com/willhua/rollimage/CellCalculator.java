@@ -7,7 +7,7 @@ public interface CellCalculator {
     public static final int FORWARD = 1;
     public static final int BACKWARD = 2;
 
-    public void setCells(Cell[] cells);
-    public void setStatus(int direction, float status);
+    public Cell[] getCells();
+    public void setStatus(int direction, int distance);
     public void setDimen(int widht, int height);
 }
