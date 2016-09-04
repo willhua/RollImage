@@ -1,12 +1,17 @@
 package com.willhua.rollimage;
 
 import android.content.Context;
+import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
+import android.provider.MediaStore;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by willhua on 2016/9/3.
@@ -30,10 +35,17 @@ public class RollImageView extends View {
 
     public RollImageView(Context context, AttributeSet attrs) {
         super(context, attrs);
-        dataInit();
     }
 
     private void dataInit() {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                List<String> paths = queryImages();
+                mImageLoader = new DefaultImageLoader(SHOW_CNT, paths);
+
+            }
+        }).start();
     }
 
     @Override
@@ -91,7 +103,27 @@ public class RollImageView extends View {
         }
     }
 
+    private List<String> queryImages(){
+        Cursor cursor = getContext().getContentResolver().query(MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                new String[]{MediaStore.Images.ImageColumns.DATA},  null, null, null);
+        List<String> paths = new ArrayList<>();
+        try {
+            while(cursor.moveToNext()){
+                String path = cursor.getString(0);
+                if(path != null){
+                    paths.add(path);
+                }
+            }
+
+        } catch (Exception e){
+
+        }
+        return  paths;
+    }
+
     private void LOG(String msg){
         Log.d("RollImageView","willhua:  " + msg);
     }
+
+
 }

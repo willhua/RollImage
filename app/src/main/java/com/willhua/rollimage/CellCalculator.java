@@ -8,6 +8,6 @@ public interface CellCalculator {
     public static final int BACKWARD = 2;
 
     public Cell[] getCells();
-    public void setStatus(int direction, int distance);
+    public int setStatus(int direction, int distance);
     public void setDimen(int widht, int height);
 }

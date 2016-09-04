@@ -50,8 +50,9 @@ public class DefaultCellCalculator implements CellCalculator {
         return  mCells;
     }
 
+    //TODO 返回是否要切换到下一张
     @Override
-    public void setStatus(int direction, int distance) {
+    public int setStatus(int direction, int distance) {
         if(distance > 0){
             calculateForward(distance);
         } else if(distance < 0){
@@ -59,6 +60,7 @@ public class DefaultCellCalculator implements CellCalculator {
         } else{
             initCells();
         }
+        return 0;
     }
 
     @Override
