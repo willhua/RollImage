@@ -90,11 +90,13 @@ public class RollImageView extends View {
         super.onDraw(canvas);
         Bitmap[] bitmaps = mImageLoader.getBitmap(ImageLoader.SAMLL);
         Cell[] cells = mCellCalculator.getCells();
+        canvas.translate(getWidth() / 2, 0);
         for(int i = 0; i < SHOW_CNT; i++){
             Bitmap bitmap = bitmaps[i];
             Cell cell = cells[i];
             if(bitmap != null && !bitmap.isRecycled()){
                 mPaint.setAlpha(cell.getAlpha());
+                LOG("ondraw " + i + bitmap.getWidth() + " " + cell.getRectF() + " alpha " + cell.getAlpha() );
                 canvas.drawBitmap(bitmap, null, cell.getRectF(), mPaint);
             }
         }
@@ -112,6 +114,13 @@ public class RollImageView extends View {
     public void setImageLoader(ImageLoader loader) {
         if (loader != null) {
             mImageLoader = loader;
+            mImageLoader.setRefresh(new ImageLoader.Refresh() {
+                @Override
+                public void refresh() {
+                    LOG("refresh");
+                    invalidate();
+                }
+            });
             if(mAllImagePaths != null){
                 mImageLoader.setImagePaths(mAllImagePaths);
             }

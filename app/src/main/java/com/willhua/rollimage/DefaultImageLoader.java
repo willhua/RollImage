@@ -85,6 +85,7 @@ public class DefaultImageLoader implements ImageLoader {
         for(int i = mCurrentIndex, j = 0; j < mShowCnt; i--, j++){
             mCurrentPaths.add(mAllImagePaths[i]);
         }
+        LOG(mCurrentPaths.toString());
     }
 
     @Override

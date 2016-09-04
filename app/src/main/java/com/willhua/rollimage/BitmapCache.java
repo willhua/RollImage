@@ -89,10 +89,10 @@ public class BitmapCache {
             options.inJustDecodeBounds = false;
             Bitmap bitmap = BitmapFactory.decodeFile(mPath, options);
             if(bitmap != null){
-               {
-                    LOG("decode finish " + mPath);
-                    mBitmapCache.put(mPath, bitmap);
-                    if(mDecodeFinish != null){
+               synchronized (BitmapCache.this){
+                   mBitmapCache.put(mPath, bitmap);
+                   LOG("mBitmapCache " + mBitmapCache.size());
+                   if(mDecodeFinish != null){
                         mDecodeFinish.DecodeFinish(mPath, bitmap);
                     }
                 }
