@@ -10,7 +10,14 @@
     tools:context="com.willhua.rollimage.MainActivity">
 
     <TextView
+        android:id="@+id/tv"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Hello World!" />
+    
+    <com.willhua.rollimage.RollImageView
+        android:id="@+id/roll"
+        android:layout_below="@+id/tv"
+        android:layout_width="match_parent"
+        android:layout_height="500px" />
 </RelativeLayout>

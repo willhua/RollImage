@@ -12,17 +12,17 @@ public class DefaultCellCalculator implements CellCalculator {
 
     private final int[] STATIC_ALPHA; //the alpha of every image when without move
     private final int mCnt;
-    private final int mViewWidth;
-    private final int mViewHeight;
-    private final int mWidhtIndent;
-    private final int[] mWidths; //width for every image when without move
-    private final int mImageHeight; //height for every image when without move
+    private int mViewWidth;
+    private int mViewHeight;
+    private int mWidhtIndent;
+    private int[] mWidths; //width for every image when without move
+    private int mImageHeight; //height for every image when without move
 
     private float[] mAlphas; //alpha for every image
     private Cell[] mCells;
 
-    public DefaultCellCalculator(int showCnt, int widht, int height){
-        mCnt = showCnt + 1;
+    public DefaultCellCalculator(int showCnt){
+        mCnt = showCnt;
         mCells = new Cell[mCnt];
         mAlphas = new float[mCnt];
         STATIC_ALPHA = new int[mCnt];
@@ -30,19 +30,6 @@ public class DefaultCellCalculator implements CellCalculator {
         for(int i = 0; i < mCnt; i++){
             STATIC_ALPHA[i] = i * alphaUnit;
         }
-
-
-        mViewWidth = widht;
-        mViewHeight = height;
-        mWidhtIndent = (int)(WIDHT_INDENT * mViewWidth);
-        mWidths = new int[mCnt];
-        for(int i = 0; i < mCnt; i++){
-            mWidths[i] = mViewWidth - i * mWidhtIndent;
-        }
-        //每张图片的高度。
-        //假如显示四张图，那么在上面会有三个高度落差，然后最底部保留一个高度落差，所以是mcnt-1
-        mImageHeight = mViewHeight - (mCnt - 1) * HEIGHT_INDENT;
-        initCells();
     }
 
     @Override
@@ -65,7 +52,17 @@ public class DefaultCellCalculator implements CellCalculator {
 
     @Override
     public void setDimen(int widht, int height) {
-
+        mViewWidth = widht;
+        mViewHeight = height;
+        mWidhtIndent = (int)(WIDHT_INDENT * mViewWidth);
+        mWidths = new int[mCnt];
+        for(int i = 0; i < mCnt; i++){
+            mWidths[i] = mViewWidth - i * mWidhtIndent;
+        }
+        //每张图片的高度。
+        //假如显示四张图，那么在上面会有三个高度落差，然后最底部保留一个高度落差，所以是mcnt-1
+        mImageHeight = mViewHeight - (mCnt - 1) * HEIGHT_INDENT;
+        initCells();
     }
 
     private void calculateForward(float status){

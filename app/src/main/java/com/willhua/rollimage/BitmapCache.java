@@ -33,10 +33,13 @@ public class BitmapCache {
         }
     };
 
-    public BitmapCache(DefaultImageLoader.DecodeFinish decodeFinish, int smallWidht, int smallHeight, int largeWidht, int largeHeight){
+    public BitmapCache(DefaultImageLoader.DecodeFinish decodeFinish){
         mDecodeFinish = decodeFinish;
         mDefaultBitmap = Bitmap.createBitmap(10, 10, Bitmap.Config.ARGB_8888);
         mDefaultBitmap.eraseColor(0);
+    }
+
+    public void setDimen(int smallWidht, int smallHeight, int largeWidht, int largeHeight){
         mSmallWidth = smallWidht;
         mSmallHeight = smallHeight;
         mLargeWidth = largeWidht;
@@ -44,10 +47,12 @@ public class BitmapCache {
     }
 
     public Bitmap getBimap(String path, int size){
+        LOG("getBitmap "+ path);
         if(size == ImageLoader.SAMLL){
             Bitmap bitmap = mBitmapCache.get(path);
             if(bitmap == null || bitmap.isRecycled()){
                 bitmap = mDefaultBitmap;
+                LOG("getBitmap  submit "+ path);
                 mExecutorService.submit(new DecodeTask(path, mSmallWidth, mSmallHeight));
             }
             return bitmap;
@@ -76,21 +81,16 @@ public class BitmapCache {
 
         @Override
         public void run() {
-            FileInputStream stream = null;
-            try{
-                stream = new FileInputStream(mPath);
-            } catch (FileNotFoundException e){
-                Log.e("BitmapCache", Log.getStackTraceString(e));
-                return;
-            }
+            LOG("start decode " + mPath);
             BitmapFactory.Options options = new BitmapFactory.Options();
             options.inJustDecodeBounds = true;
-            BitmapFactory.decodeStream(stream, null, options);
+            BitmapFactory.decodeFile(mPath, options);
             options.inSampleSize = getSample(options, mWidth, mHeight);
             options.inJustDecodeBounds = false;
-            Bitmap bitmap = BitmapFactory.decodeStream(stream, null, options);
+            Bitmap bitmap = BitmapFactory.decodeFile(mPath, options);
             if(bitmap != null){
-                synchronized (BitmapCache.this){
+               {
+                    LOG("decode finish " + mPath);
                     mBitmapCache.put(mPath, bitmap);
                     if(mDecodeFinish != null){
                         mDecodeFinish.DecodeFinish(mPath, bitmap);
@@ -114,7 +114,9 @@ public class BitmapCache {
         return  sample;
     }
 
-
+    private void LOG(String msg){
+        Log.d("BitmapCache", "willhua: " + msg);
+    }
 
 
 }

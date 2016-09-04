@@ -1,6 +1,7 @@
 package com.willhua.rollimage;
 
 import android.graphics.Bitmap;
+import android.util.Log;
 import android.util.LruCache;
 import android.view.View;
 
@@ -17,10 +18,10 @@ public class DefaultImageLoader implements ImageLoader {
         public void DecodeFinish(String path, Bitmap bitmap);
     }
 
-    private int mSmallWidth;
-    private int mSmallHeight;
-    private int mBigWidht;
-    private int mBigHeight;
+    private int mSmallWidth = 100;
+    private int mSmallHeight = 80;
+    private int mBigWidht = 300;
+    private int mBigHeight = 200;
 
     private int mImagesCnt;
     private final int mShowCnt;
@@ -34,6 +35,7 @@ public class DefaultImageLoader implements ImageLoader {
     private DecodeFinish mDecodeFinish = new DecodeFinish() {
         @Override
         public void DecodeFinish(String path, Bitmap bitmap) {
+            LOG("DecodeFinish " + path);
             if(mCurrentPaths.contains(path)){
                 mRefresh.refresh();
             }
@@ -42,7 +44,7 @@ public class DefaultImageLoader implements ImageLoader {
 
 
     public DefaultImageLoader(int showcnt){
-        mShowCnt = showcnt + 1;
+        mShowCnt = showcnt;
         mCurrentIndex = mShowCnt;
         mCurrentBitmaps = new Bitmap[mShowCnt];
         mBitmapCache = new BitmapCache(mDecodeFinish);
@@ -68,7 +70,9 @@ public class DefaultImageLoader implements ImageLoader {
 
     @Override
     public Bitmap[] getBitmap(int size) {
+        LOG("getBitmap");
         if(mCurrentPaths != null){
+            LOG("getBitmap paths nut null");
             for(int i = mCurrentIndex, j = 0; j < mShowCnt; j++, i--){
                 mCurrentBitmaps[j] = mBitmapCache.getBimap(mAllImagePaths[i], ImageLoader.SAMLL);
             }
@@ -93,7 +97,22 @@ public class DefaultImageLoader implements ImageLoader {
         mImagesCnt = paths.size();
         mAllImagePaths = new String[mImagesCnt];
         paths.toArray(mAllImagePaths);
+        mCurrentIndex = mShowCnt;
+        setCurrentPaths();
     }
 
+    @Override
+    public void setDimen(int width, int height) {
+        mBigWidht = width;
+        mBigHeight = height;
+        mSmallWidth = width / 4;
+        mSmallHeight = height / 4;
+        if(mBitmapCache != null){
+            mBitmapCache.setDimen(mSmallWidth, mSmallHeight, mBigWidht, mBigHeight);
+        }
+    }
 
+    private void LOG(String msg){
+        Log.d("DefaultImageLoader", "willhua: " + msg);
+    }
 }

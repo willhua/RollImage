@@ -21,4 +21,5 @@ public interface ImageLoader {
     public Bitmap[] getBitmap(int size);
     public void setRefresh(Refresh refresh);
     public void setImagePaths(List<String> paths);
+    public void setDimen(int width, int height);
 }

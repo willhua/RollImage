@@ -4,6 +4,8 @@ import android.content.Context;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
+import android.graphics.Paint;
+import android.graphics.RectF;
 import android.provider.MediaStore;
 import android.util.AttributeSet;
 import android.util.Log;
@@ -19,10 +21,12 @@ import java.util.List;
 public class RollImageView extends View {
 
 
-    public static final int SHOW_CNT = 4;
+    public static final int SHOW_CNT = 5;
     private static final int DEFALT_WIDHT = 200;
     private static final int DEFALT_HEIGHT = 120;
 
+
+    private List<String> mAllImagePaths;
 
     private ImageLoader mImageLoader;
     private Bitmap[] mBitmaps; //bitmaps shown current
@@ -33,20 +37,13 @@ public class RollImageView extends View {
     private int mWidth = DEFALT_WIDHT;
     private int mHeight = DEFALT_HEIGHT;
 
+    private Paint mPaint;
+
     public RollImageView(Context context, AttributeSet attrs) {
         super(context, attrs);
+        mPaint = new Paint();
     }
 
-    private void dataInit() {
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                List<String> paths = queryImages();
-                mImageLoader = new DefaultImageLoader(SHOW_CNT, paths);
-
-            }
-        }).start();
-    }
 
     @Override
     protected void onMeasure(int widthMeasureSpec, int heihtMeasureSpec) {
@@ -77,6 +74,9 @@ public class RollImageView extends View {
         if(mCellCalculator != null){
             mCellCalculator.setDimen(mWidth, mHeight);
         }
+        if(mImageLoader != null){
+            mImageLoader.setDimen(mWidth, mHeight);
+        }
         LOG("onmeasure mwidth:" + mWidth + " mheight:" + mHeight);
     }
 
@@ -88,11 +88,33 @@ public class RollImageView extends View {
     @Override
     public void onDraw(Canvas canvas) {
         super.onDraw(canvas);
+        Bitmap[] bitmaps = mImageLoader.getBitmap(ImageLoader.SAMLL);
+        Cell[] cells = mCellCalculator.getCells();
+        for(int i = 0; i < SHOW_CNT; i++){
+            Bitmap bitmap = bitmaps[i];
+            Cell cell = cells[i];
+            if(bitmap != null && !bitmap.isRecycled()){
+                mPaint.setAlpha(cell.getAlpha());
+                canvas.drawBitmap(bitmap, null, cell.getRectF(), mPaint);
+            }
+        }
+    }
+
+    public void setImagePaths(List<String> paths){
+        if(paths != null){
+            mAllImagePaths = paths;
+            if(mImageLoader != null){
+                mImageLoader.setImagePaths(mAllImagePaths);
+            }
+        }
     }
 
     public void setImageLoader(ImageLoader loader) {
         if (loader != null) {
             mImageLoader = loader;
+            if(mAllImagePaths != null){
+                mImageLoader.setImagePaths(mAllImagePaths);
+            }
         }
     }
 
@@ -101,24 +123,6 @@ public class RollImageView extends View {
             mCellCalculator = cellCalculator;
             mCellCalculator.setDimen(mWidth, mHeight);
         }
-    }
-
-    private List<String> queryImages(){
-        Cursor cursor = getContext().getContentResolver().query(MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-                new String[]{MediaStore.Images.ImageColumns.DATA},  null, null, null);
-        List<String> paths = new ArrayList<>();
-        try {
-            while(cursor.moveToNext()){
-                String path = cursor.getString(0);
-                if(path != null){
-                    paths.add(path);
-                }
-            }
-
-        } catch (Exception e){
-
-        }
-        return  paths;
     }
 
     private void LOG(String msg){
