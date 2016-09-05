@@ -9,14 +9,19 @@ public class Cell {
     private RectF mRectF;
     private int mAlpha;
 
+    private float top;
+    private float bottom;
+
     public Cell(){
         mRectF = new RectF();
         mAlpha = 0;
+        init();
     }
 
     public Cell(RectF rectF, int alpha){
         mRectF = rectF;
         mAlpha = alpha;
+        init();
     }
 
     public void setWidth(float width){
@@ -25,9 +30,15 @@ public class Cell {
         mRectF.right += diff;
     }
 
+    private void init(){
+        top = mRectF.top;
+        bottom = mRectF.bottom;
+    }
+
     public void moveVertical(float value){
-        mRectF.top += value;
-        mRectF.bottom += value;
+    //    float diff = (width - mRectF.width()) / 2;
+        mRectF.top = top + value;
+        mRectF.bottom = bottom + value;
     }
 
     public void setHeight(float height){
@@ -39,10 +50,12 @@ public class Cell {
         mRectF.bottom = 0;
         mRectF.left = 0;
         mRectF.right = 0;
+        init();
     }
 
     public void setRectF(RectF rectF){
         mRectF = rectF;
+        init();
     }
 
     public void setAlpha(int alpha){

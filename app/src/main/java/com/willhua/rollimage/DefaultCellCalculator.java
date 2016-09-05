@@ -1,17 +1,18 @@
 package com.willhua.rollimage;
 
 import android.graphics.RectF;
+import android.util.Log;
 
 /**
  * Created by willhua on 2016/9/3.
  */
 public class DefaultCellCalculator implements CellCalculator {
 
-    private static final float WIDHT_INDENT = 0.05F;
+    private static final float WIDHT_INDENT = 0.08F;
     private static final int HEIGHT_INDENT = 15;
 
     private final int[] STATIC_ALPHA; //the alpha of every image when standing still
-    private final int FIRST_ALPHA = 120; //the first image aplpha when standing still
+    private final int FIRST_ALPHA = 180; //the first image aplpha when standing still
     private final int mCnt;
     private int mViewWidth;
     private int mViewHeight;
@@ -41,7 +42,7 @@ public class DefaultCellCalculator implements CellCalculator {
 
     //TODO 返回是否要切换到下一张
     @Override
-    public int setStatus(int direction, int distance) {
+    public int setStatus(int direction, float distance) {
         if(distance > 0){
             calculateForward(distance);
         } else if(distance < 0){
@@ -64,13 +65,20 @@ public class DefaultCellCalculator implements CellCalculator {
         //每张图片的高度。
         //假如显示四张图，那么在上面会有三个高度落差，然后最底部保留一个高度落差，所以是mcnt-1
         mImageHeight = mViewHeight - (mCnt - 1) * HEIGHT_INDENT;
+        LOG("mImageHeight " + mImageHeight);
+        initCells();
+    }
+
+    @Override
+    public void setStatic() {
         initCells();
     }
 
     private void calculateForward(float status){
         float scale = status / mImageHeight;
+        LOG("scale " + scale + " mImageHeight " + mImageHeight + " status " + status);
         for(int i = 0; i < mCnt - 1; i++){
-            mCells[i].setWidth(interpolate(scale, mWidths[i], mWidths[i + 1]));
+            mCells[i].setWidth(interpolate(scale * 10, mWidths[i], mWidths[i + 1])); //使得宽度迅速增大，向前的动画感更强
             mCells[i].moveVertical(scale * HEIGHT_INDENT);
             mCells[i].setAlpha((int)interpolate(scale, STATIC_ALPHA[i], STATIC_ALPHA[i + 1]));
         }
@@ -106,6 +114,13 @@ public class DefaultCellCalculator implements CellCalculator {
     }
 
     private float interpolate(float scale, float start, float end){
+        if(scale > 1){
+            scale = 1;
+        }
         return start + scale * (end - start);
+    }
+
+    private void LOG(String msg){
+        Log.d("DefaultCellCalculator", "willhua: " + msg);
     }
 }

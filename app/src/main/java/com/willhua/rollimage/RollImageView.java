@@ -44,15 +44,15 @@ public class RollImageView extends View {
     private Paint mPaint;
 
 
-    private Handler mHandler = new Handler(){
+    private Handler mHandler = new Handler() {
         @Override
-        public void handleMessage(Message msg){
+        public void handleMessage(Message msg) {
             switch (msg.what) {
-            case MSG_INVALATE :
-                invalidate();
-                break;
-            default:
-                break;
+                case MSG_INVALATE:
+                    invalidate();
+                    break;
+                default:
+                    break;
             }
         }
     };
@@ -89,17 +89,42 @@ public class RollImageView extends View {
             mWidth = width - paddX;
             mHeight = DEFALT_HEIGHT - paddY;
         }
-        if(mCellCalculator != null){
+        if (mCellCalculator != null) {
             mCellCalculator.setDimen(mWidth, mHeight);
         }
-        if(mImageLoader != null){
+        if (mImageLoader != null) {
             mImageLoader.setDimen(mWidth, mHeight);
         }
         LOG("onmeasure mwidth:" + mWidth + " mheight:" + mHeight);
     }
 
+    private float mDownX = 0;
+
     @Override
     public boolean onTouchEvent(MotionEvent event) {
+        if (event.getPointerCount() > 1) {
+            return false;
+        }
+        float x = event.getX();
+        int action = event.getAction();
+        switch (action) {
+            case MotionEvent.ACTION_DOWN:
+                mDownX = x;
+                break;
+            case MotionEvent.ACTION_MOVE:
+                float diff = x - mDownX;
+                if (diff > 0) {
+                    mCellCalculator.setStatus(CellCalculator.FORWARD, diff);
+                }
+                invalidate();
+                break;
+            case MotionEvent.ACTION_UP:
+                mCellCalculator.setStatic();
+                invalidate();
+                break;
+            default:
+                break;
+        }
         return true;
     }
 
@@ -107,25 +132,25 @@ public class RollImageView extends View {
     public void onDraw(Canvas canvas) {
         super.onDraw(canvas);
         LOG("ondraw");
-        canvas.drawARGB(255,0,0,0);
+        canvas.drawARGB(255, 0, 0, 0);
         Bitmap[] bitmaps = mImageLoader.getBitmap(ImageLoader.SAMLL);
         Cell[] cells = mCellCalculator.getCells();
         canvas.translate(getWidth() / 2, 0);
-        for(int i = 0; i < SHOW_CNT; i++){
+        for (int i = 0; i < SHOW_CNT; i++) {
             Bitmap bitmap = bitmaps[i];
             Cell cell = cells[i];
-            if(bitmap != null && !bitmap.isRecycled()){
+            if (bitmap != null && !bitmap.isRecycled()) {
                 mPaint.setAlpha(cell.getAlpha());
-                LOG("ondraw " + i + bitmap.getWidth() + " " + cell.getRectF() + " alpha " + cell.getAlpha() );
+                LOG("ondraw " + i + bitmap.getWidth() + " " + cell.getRectF() + " alpha " + cell.getAlpha());
                 canvas.drawBitmap(bitmap, null, cell.getRectF(), mPaint);
             }
         }
     }
 
-    public void setImagePaths(List<String> paths){
-        if(paths != null){
+    public void setImagePaths(List<String> paths) {
+        if (paths != null) {
             mAllImagePaths = paths;
-            if(mImageLoader != null){
+            if (mImageLoader != null) {
                 mImageLoader.setImagePaths(mAllImagePaths);
             }
         }
@@ -141,7 +166,7 @@ public class RollImageView extends View {
                     mHandler.sendEmptyMessage(MSG_INVALATE);
                 }
             });
-            if(mAllImagePaths != null){
+            if (mAllImagePaths != null) {
                 mImageLoader.setImagePaths(mAllImagePaths);
             }
         }
@@ -154,8 +179,8 @@ public class RollImageView extends View {
         }
     }
 
-    private void LOG(String msg){
-        Log.d("RollImageView","willhua:  " + msg);
+    private void LOG(String msg) {
+        Log.d("RollImageView", "willhua:  " + msg);
     }
 
 
