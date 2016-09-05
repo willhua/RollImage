@@ -6,11 +6,14 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.RectF;
+import android.os.Handler;
+import android.os.Message;
 import android.provider.MediaStore;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
+import android.widget.Switch;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,6 +25,7 @@ public class RollImageView extends View {
 
 
     public static final int SHOW_CNT = 5;
+    private static final int MSG_INVALATE = 0;
     private static final int DEFALT_WIDHT = 200;
     private static final int DEFALT_HEIGHT = 120;
 
@@ -38,6 +42,20 @@ public class RollImageView extends View {
     private int mHeight = DEFALT_HEIGHT;
 
     private Paint mPaint;
+
+
+    private Handler mHandler = new Handler(){
+        @Override
+        public void handleMessage(Message msg){
+            switch (msg.what) {
+            case MSG_INVALATE :
+                invalidate();
+                break;
+            default:
+                break;
+            }
+        }
+    };
 
     public RollImageView(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -88,6 +106,7 @@ public class RollImageView extends View {
     @Override
     public void onDraw(Canvas canvas) {
         super.onDraw(canvas);
+        LOG("ondraw");
         canvas.drawARGB(255,0,0,0);
         Bitmap[] bitmaps = mImageLoader.getBitmap(ImageLoader.SAMLL);
         Cell[] cells = mCellCalculator.getCells();
@@ -119,7 +138,7 @@ public class RollImageView extends View {
                 @Override
                 public void refresh() {
                     LOG("refresh");
-                    invalidate();
+                    mHandler.sendEmptyMessage(MSG_INVALATE);
                 }
             });
             if(mAllImagePaths != null){

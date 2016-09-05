@@ -48,6 +48,7 @@ public class BitmapCache {
 
     public Bitmap getBimap(String path, int size){
         LOG("getBitmap "+ path);
+        LOG("cache " + mBitmapCache.size());
         if(size == ImageLoader.SAMLL){
             Bitmap bitmap = mBitmapCache.get(path);
             if(bitmap == null || bitmap.isRecycled()){
@@ -91,17 +92,14 @@ public class BitmapCache {
             if(bitmap != null){
                synchronized (BitmapCache.this){
                    mBitmapCache.put(mPath, bitmap);
+                   LOG("run put " + mPath);
                    LOG("mBitmapCache " + mBitmapCache.size());
                    if(mDecodeFinish != null){
                         mDecodeFinish.DecodeFinish(mPath, bitmap);
                     }
                 }
-
             }
-
         }
-
-
     }
 
     private int getSample(BitmapFactory.Options options, int width, int height){

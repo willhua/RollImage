@@ -37,6 +37,7 @@ public class DefaultImageLoader implements ImageLoader {
         public void DecodeFinish(String path, Bitmap bitmap) {
             LOG("DecodeFinish " + path);
             if(mCurrentPaths.contains(path)){
+                LOG("DecodeFinish refresh " + path);
                 mRefresh.refresh();
             }
         }
