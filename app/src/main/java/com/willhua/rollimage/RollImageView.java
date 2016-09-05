@@ -88,6 +88,7 @@ public class RollImageView extends View {
     @Override
     public void onDraw(Canvas canvas) {
         super.onDraw(canvas);
+        canvas.drawARGB(255,0,0,0);
         Bitmap[] bitmaps = mImageLoader.getBitmap(ImageLoader.SAMLL);
         Cell[] cells = mCellCalculator.getCells();
         canvas.translate(getWidth() / 2, 0);

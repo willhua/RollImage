@@ -8,15 +8,16 @@ import android.graphics.RectF;
 public class DefaultCellCalculator implements CellCalculator {
 
     private static final float WIDHT_INDENT = 0.05F;
-    private static final int HEIGHT_INDENT = 5;
+    private static final int HEIGHT_INDENT = 15;
 
-    private final int[] STATIC_ALPHA; //the alpha of every image when without move
+    private final int[] STATIC_ALPHA; //the alpha of every image when standing still
+    private final int FIRST_ALPHA = 120; //the first image aplpha when standing still
     private final int mCnt;
     private int mViewWidth;
     private int mViewHeight;
     private int mWidhtIndent;
-    private int[] mWidths; //width for every image when without move
-    private int mImageHeight; //height for every image when without move
+    private int[] mWidths; //width for every image when standing still
+    private int mImageHeight; //height for every image when standing still
 
     private float[] mAlphas; //alpha for every image
     private Cell[] mCells;
@@ -26,9 +27,10 @@ public class DefaultCellCalculator implements CellCalculator {
         mCells = new Cell[mCnt];
         mAlphas = new float[mCnt];
         STATIC_ALPHA = new int[mCnt];
-        int alphaUnit = 255 / mCnt;
-        for(int i = 0; i < mCnt; i++){
-            STATIC_ALPHA[i] = i * alphaUnit;
+        STATIC_ALPHA[0] = 0;
+        int alphaUnit = (255 - FIRST_ALPHA) / (mCnt - 2);
+        for(int i = 1; i < mCnt; i++){
+            STATIC_ALPHA[i] = FIRST_ALPHA + (i - 1) * alphaUnit;
         }
     }
 
@@ -57,7 +59,7 @@ public class DefaultCellCalculator implements CellCalculator {
         mWidhtIndent = (int)(WIDHT_INDENT * mViewWidth);
         mWidths = new int[mCnt];
         for(int i = 0; i < mCnt; i++){
-            mWidths[i] = mViewWidth - i * mWidhtIndent;
+            mWidths[i] = mViewWidth - (mCnt - i) * mWidhtIndent;
         }
         //每张图片的高度。
         //假如显示四张图，那么在上面会有三个高度落差，然后最底部保留一个高度落差，所以是mcnt-1
