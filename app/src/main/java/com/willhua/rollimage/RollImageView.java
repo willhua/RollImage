@@ -1,21 +1,16 @@
 package com.willhua.rollimage;
 
 import android.content.Context;
-import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Paint;
-import android.graphics.RectF;
 import android.os.Handler;
 import android.os.Message;
-import android.provider.MediaStore;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
-import android.widget.Switch;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -42,6 +37,7 @@ public class RollImageView extends View {
     private int mHeight = DEFALT_HEIGHT;
 
     private Paint mPaint;
+    private Bitmap mCanvasBitmap;
 
 
     private Handler mHandler = new Handler() {
@@ -89,6 +85,9 @@ public class RollImageView extends View {
             mWidth = width - paddX;
             mHeight = DEFALT_HEIGHT - paddY;
         }
+        if(mCanvasBitmap == null || mCanvasBitmap.getWidth() != mWidth || mCanvasBitmap.getHeight() != mHeight){
+            mCanvasBitmap = Bitmap.createBitmap(mWidth, mHeight, Bitmap.Config.ARGB_8888);
+        }
         if (mCellCalculator != null) {
             mCellCalculator.setDimen(mWidth, mHeight);
         }
@@ -98,27 +97,32 @@ public class RollImageView extends View {
         LOG("onmeasure mwidth:" + mWidth + " mheight:" + mHeight);
     }
 
-    private float mDownX = 0;
+    private float mDownY = 0;
+    private int mRollResult = 0;
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         if (event.getPointerCount() > 1) {
             return false;
         }
-        float x = event.getX();
+        float y = event.getY();
         int action = event.getAction();
         switch (action) {
             case MotionEvent.ACTION_DOWN:
-                mDownX = x;
+                mDownY = y;
                 break;
             case MotionEvent.ACTION_MOVE:
-                float diff = x - mDownX;
+                float diff = y - mDownY;
                 if (diff > 0) {
-                    mCellCalculator.setStatus(CellCalculator.FORWARD, diff);
+                    LOG("ondraw diff " + diff + " " + mDownY + " " + y);
+                    mRollResult = mCellCalculator.setStatus(0, diff);
                 }
                 invalidate();
                 break;
             case MotionEvent.ACTION_UP:
+                if(mRollResult == 1){
+                    mImageLoader.rollForward();
+                }
                 mCellCalculator.setStatic();
                 invalidate();
                 break;

@@ -43,6 +43,7 @@ public class Cell {
 
     public void setHeight(float height){
         mRectF.bottom = mRectF.top + height;
+        bottom = mRectF.bottom;
     }
 
     public void resetRect(){

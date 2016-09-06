@@ -40,11 +40,10 @@ public class DefaultCellCalculator implements CellCalculator {
         return  mCells;
     }
 
-    //TODO 返回是否要切换到下一张
     @Override
     public int setStatus(int direction, float distance) {
         if(distance > 0){
-            calculateForward(distance);
+            return calculateForward(distance);
         } else if(distance < 0){
             calculateBackward(distance);
         } else{
@@ -74,16 +73,21 @@ public class DefaultCellCalculator implements CellCalculator {
         initCells();
     }
 
-    private void calculateForward(float status){
+    private int calculateForward(float status){
         float scale = status / mImageHeight;
         LOG("scale " + scale + " mImageHeight " + mImageHeight + " status " + status);
         for(int i = 0; i < mCnt - 1; i++){
-            mCells[i].setWidth(interpolate(scale * 10, mWidths[i], mWidths[i + 1])); //使得宽度迅速增大，向前的动画感更强
-            mCells[i].moveVertical(scale * HEIGHT_INDENT);
+            mCells[i].setWidth(interpolate(scale * 3, mWidths[i], mWidths[i + 1]));
+            mCells[i].moveVertical(interpolate(scale * 10, 0, HEIGHT_INDENT));  //使得后面的图片迅速向前，向前的动画感更强
             mCells[i].setAlpha((int)interpolate(scale, STATIC_ALPHA[i], STATIC_ALPHA[i + 1]));
         }
         mCells[mCnt - 1].moveVertical(status);
         mCells[mCnt - 1].setAlpha((int)interpolate(scale, 255, 0));
+        if(status >= mImageHeight / 2){
+            return 1;
+        } else {
+            return 0;
+        }
     }
 
     private void calculateBackward(float status){
