@@ -8,7 +8,9 @@ import android.os.Handler;
 import android.os.Message;
 import android.util.AttributeSet;
 import android.util.Log;
+import android.view.GestureDetector;
 import android.view.MotionEvent;
+import android.view.VelocityTracker;
 import android.view.View;
 
 import java.util.List;
@@ -38,7 +40,12 @@ public class RollImageView extends View {
 
     private Paint mPaint;
     private Bitmap mCanvasBitmap;
-
+    private VelocityTracker mVelocityTracker;
+    private float mDownY = 0;
+    private int mRollResult = 0;
+    private float mVelocity;
+    private boolean mVelocityDone = false;
+    private GestureDetector mGestureDetector;
 
     private Handler mHandler = new Handler() {
         @Override
@@ -56,6 +63,7 @@ public class RollImageView extends View {
     public RollImageView(Context context, AttributeSet attrs) {
         super(context, attrs);
         mPaint = new Paint();
+        mGestureDetector = new GestureDetector(getContext(), new GestureListener());
     }
 
 
@@ -97,25 +105,36 @@ public class RollImageView extends View {
         LOG("onmeasure mwidth:" + mWidth + " mheight:" + mHeight);
     }
 
-    private float mDownY = 0;
-    private int mRollResult = 0;
-
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         if (event.getPointerCount() > 1) {
             return false;
         }
+        mGestureDetector.onTouchEvent(event);
+        if(mVelocityTracker == null){
+            mVelocityTracker = VelocityTracker.obtain();
+        }
+        if(!mVelocityDone){
+            mVelocityTracker.addMovement(event);
+        }
         float y = event.getY();
         int action = event.getAction();
         switch (action) {
             case MotionEvent.ACTION_DOWN:
+
                 mDownY = y;
                 break;
             case MotionEvent.ACTION_MOVE:
+                if(!mVelocityDone){
+                    mVelocityTracker.computeCurrentVelocity(1);
+                    mVelocity = mVelocityTracker.getYVelocity();
+                    LOG("velocity " + mVelocity);
+                    mVelocityDone = true;
+                }
                 float diff = y - mDownY;
                 if (diff > 0) {
                     LOG("ondraw diff " + diff + " " + mDownY + " " + y);
-                    mRollResult = mCellCalculator.setStatus(0, diff);
+              //      mRollResult = mCellCalculator.setStatus(0, diff);
                 }
                 invalidate();
                 break;
@@ -123,8 +142,15 @@ public class RollImageView extends View {
                 if(mRollResult == 1){
                     mImageLoader.rollForward();
                 }
+
                 mCellCalculator.setStatic();
                 invalidate();
+                if(mVelocityTracker != null){
+                    mVelocityTracker.clear();
+                    mVelocityTracker.recycle();
+                    mVelocityTracker = null;
+                    mVelocityDone = false;
+                }
                 break;
             default:
                 break;
@@ -183,8 +209,47 @@ public class RollImageView extends View {
         }
     }
 
-    private void LOG(String msg) {
+    private static void LOG(String msg) {
         Log.d("RollImageView", "willhua:  " + msg);
+    }
+
+
+    private static class GestureListener implements  GestureDetector.OnGestureListener{
+
+        @Override
+        public boolean onDown(MotionEvent e) {
+            LOG("OnGestureListener onDown");
+            return false;
+        }
+
+        @Override
+        public void onShowPress(MotionEvent e) {
+            LOG("OnGestureListener onShowPress");
+        }
+
+        @Override
+        public boolean onSingleTapUp(MotionEvent e) {
+            LOG("OnGestureListener onSingleTapUp");
+            return false;
+        }
+
+        @Override
+        public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
+            LOG("OnGestureListener onScroll");
+            return false;
+        }
+
+        @Override
+        public void onLongPress(MotionEvent e) {
+            LOG("OnGestureListener onLongPress");
+
+        }
+
+        @Override
+        public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
+            LOG("OnGestureListener onFling");
+            return false;
+        }
     }
 
 

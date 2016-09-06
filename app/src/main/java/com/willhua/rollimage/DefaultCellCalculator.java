@@ -41,7 +41,7 @@ public class DefaultCellCalculator implements CellCalculator {
     }
 
     @Override
-    public int setStatus(int direction, float distance) {
+    public int setStatus(float speed, float distance) {
         if(distance > 0){
             return calculateForward(distance);
         } else if(distance < 0){
