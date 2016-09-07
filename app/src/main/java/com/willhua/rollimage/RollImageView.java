@@ -10,10 +10,11 @@ import android.util.AttributeSet;
 import android.util.Log;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
-import android.view.VelocityTracker;
 import android.view.View;
 
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * Created by willhua on 2016/9/3.
@@ -30,9 +31,7 @@ public class RollImageView extends View {
     private List<String> mAllImagePaths;
 
     private ImageLoader mImageLoader;
-    private Bitmap[] mBitmaps; //bitmaps shown current
     private CellCalculator mCellCalculator;
-    private Cell[] mCells;
 
     //实际绘制区域大小
     private int mWidth = DEFALT_WIDHT;
@@ -40,11 +39,7 @@ public class RollImageView extends View {
 
     private Paint mPaint;
     private Bitmap mCanvasBitmap;
-    private VelocityTracker mVelocityTracker;
-    private float mDownY = 0;
     private int mRollResult = 0;
-    private float mVelocity;
-    private boolean mVelocityDone = false;
     private GestureDetector mGestureDetector;
 
     private Handler mHandler = new Handler() {
@@ -93,7 +88,7 @@ public class RollImageView extends View {
             mWidth = width - paddX;
             mHeight = DEFALT_HEIGHT - paddY;
         }
-        if(mCanvasBitmap == null || mCanvasBitmap.getWidth() != mWidth || mCanvasBitmap.getHeight() != mHeight){
+        if (mCanvasBitmap == null || mCanvasBitmap.getWidth() != mWidth || mCanvasBitmap.getHeight() != mHeight) {
             mCanvasBitmap = Bitmap.createBitmap(mWidth, mHeight, Bitmap.Config.ARGB_8888);
         }
         if (mCellCalculator != null) {
@@ -105,52 +100,20 @@ public class RollImageView extends View {
         LOG("onmeasure mwidth:" + mWidth + " mheight:" + mHeight);
     }
 
+
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         if (event.getPointerCount() > 1) {
             return false;
         }
         mGestureDetector.onTouchEvent(event);
-        if(mVelocityTracker == null){
-            mVelocityTracker = VelocityTracker.obtain();
-        }
-        if(!mVelocityDone){
-            mVelocityTracker.addMovement(event);
-        }
-        float y = event.getY();
-        int action = event.getAction();
-        switch (action) {
-            case MotionEvent.ACTION_DOWN:
-
-                mDownY = y;
-                break;
-            case MotionEvent.ACTION_MOVE:
-                if(!mVelocityDone){
-                    mVelocityTracker.computeCurrentVelocity(1);
-                    mVelocity = mVelocityTracker.getYVelocity();
-                    LOG("velocity " + mVelocity);
-                    mVelocityDone = true;
-                }
-                float diff = y - mDownY;
-                if (diff > 0) {
-                    LOG("ondraw diff " + diff + " " + mDownY + " " + y);
-              //      mRollResult = mCellCalculator.setStatus(0, diff);
-                }
-                invalidate();
-                break;
+        switch (event.getAction()) {
             case MotionEvent.ACTION_UP:
-                if(mRollResult == 1){
+                if (mRollResult == 1) {
                     mImageLoader.rollForward();
                 }
-
                 mCellCalculator.setStatic();
                 invalidate();
-                if(mVelocityTracker != null){
-                    mVelocityTracker.clear();
-                    mVelocityTracker.recycle();
-                    mVelocityTracker = null;
-                    mVelocityDone = false;
-                }
                 break;
             default:
                 break;
@@ -214,12 +177,16 @@ public class RollImageView extends View {
     }
 
 
-    private static class GestureListener implements  GestureDetector.OnGestureListener{
+    private class GestureListener implements GestureDetector.OnGestureListener {
+        private static final int MIN_FLING = 1500;
+        private float mScrollDistance;
+        private ExecutorService mExecutorService;
 
         @Override
         public boolean onDown(MotionEvent e) {
             LOG("OnGestureListener onDown");
-            return false;
+            mScrollDistance = 0;
+            return true;
         }
 
         @Override
@@ -235,8 +202,11 @@ public class RollImageView extends View {
 
         @Override
         public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
-            LOG("OnGestureListener onScroll");
-            return false;
+            mScrollDistance += distanceY;
+            LOG("OnGestureListener onScroll " + distanceY + " all" + mScrollDistance);
+            mRollResult = mCellCalculator.setStatus(0, -mScrollDistance);
+            invalidate();
+            return true;
         }
 
         @Override
@@ -247,8 +217,40 @@ public class RollImageView extends View {
 
         @Override
         public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
-            LOG("OnGestureListener onFling");
-            return false;
+            LOG("OnGestureListener onFling " + velocityY);
+            if (velocityY > MIN_FLING) {
+                if (mExecutorService == null) {
+                    mExecutorService = Executors.newSingleThreadExecutor();
+                }
+                mExecutorService.submit(new FlingTask(velocityY));
+            }
+            return true;
+        }
+
+        private class FlingTask implements Runnable {
+
+            float mVelocity;
+            float mViewHeight;
+
+            FlingTask(float velocity) {
+                mVelocity = velocity / 2;
+                mViewHeight = RollImageView.this.getHeight() / 2;
+            }
+
+            @Override
+            public void run() {
+                int i = 0;
+                while (mVelocity > mViewHeight) {
+                    mCellCalculator.setStatus(0, mViewHeight);
+                    mHandler.sendEmptyMessage(MSG_INVALATE);
+                    mVelocity -= mViewHeight;
+                    if (((i++) & 1) == 0) { //roll forward once for every two setStatus
+                        mImageLoader.rollForward();
+                    }
+                }
+                mCellCalculator.setStatic();
+                mHandler.sendEmptyMessage(MSG_INVALATE);
+            }
         }
     }
 

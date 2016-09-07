@@ -83,7 +83,7 @@ public class DefaultCellCalculator implements CellCalculator {
         }
         mCells[mCnt - 1].moveVertical(status);
         mCells[mCnt - 1].setAlpha((int)interpolate(scale, 255, 0));
-        if(status >= mImageHeight / 2){
+        if(status >= mImageHeight / 3){
             return 1;
         } else {
             return 0;

@@ -15,7 +15,7 @@ public class DefaultImageLoader implements ImageLoader {
 
 
     public interface DecodeFinish{
-        public void DecodeFinish(String path, Bitmap bitmap);
+        public void decodeFinish(String path, Bitmap bitmap);
     }
 
     private int mSmallWidth = 100;
@@ -26,7 +26,7 @@ public class DefaultImageLoader implements ImageLoader {
     private int mImagesCnt;
     private final int mShowCnt;
     private String[] mAllImagePaths;
-    private List<String> mCurrentPaths = new ArrayList<String>();
+    private List<String> mCurrentPaths = new ArrayList<>();
     private int mCurrentIndex;
     private Bitmap[] mCurrentBitmaps;
 
@@ -34,10 +34,10 @@ public class DefaultImageLoader implements ImageLoader {
     private Refresh mRefresh;
     private DecodeFinish mDecodeFinish = new DecodeFinish() {
         @Override
-        public void DecodeFinish(String path, Bitmap bitmap) {
-            LOG("DecodeFinish " + path);
+        public void decodeFinish(String path, Bitmap bitmap) {
+            LOG("decodeFinish " + path);
             if(mCurrentPaths.contains(path)){
-                LOG("DecodeFinish refresh " + path);
+                LOG("decodeFinish refresh " + path);
                 mRefresh.refresh();
             }
         }
@@ -107,8 +107,8 @@ public class DefaultImageLoader implements ImageLoader {
     public void setDimen(int width, int height) {
         mBigWidht = width;
         mBigHeight = height;
-        mSmallWidth = width / 4;
-        mSmallHeight = height / 4;
+        mSmallWidth = width / 16;
+        mSmallHeight = height / 16;
         if(mBitmapCache != null){
             mBitmapCache.setDimen(mSmallWidth, mSmallHeight, mBigWidht, mBigHeight);
         }

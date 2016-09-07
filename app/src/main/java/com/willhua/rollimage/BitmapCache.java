@@ -5,10 +5,11 @@ import android.graphics.BitmapFactory;
 import android.util.Log;
 import android.util.LruCache;
 
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Created by willhua on 2016/9/4.
@@ -24,7 +25,7 @@ public class BitmapCache {
 
     private DefaultImageLoader.DecodeFinish mDecodeFinish;
 
-    private ExecutorService mExecutorService = Executors.newFixedThreadPool(4);
+    private ExecutorService mExecutorService = new ThreadPoolExecutor(2,4,1, TimeUnit.MINUTES, new BlockingLifeQueue<Runnable>());
 
     private LruCache<String, Bitmap> mBitmapCache = new LruCache<String, Bitmap>(8 * 1024 * 1024){
         @Override
@@ -95,7 +96,7 @@ public class BitmapCache {
                    LOG("run put " + mPath);
                    LOG("mBitmapCache " + mBitmapCache.size());
                    if(mDecodeFinish != null){
-                        mDecodeFinish.DecodeFinish(mPath, bitmap);
+                        mDecodeFinish.decodeFinish(mPath, bitmap);
                     }
                 }
             }
