@@ -10,16 +10,44 @@ import java.util.List;
  */
 public interface ImageLoader {
 
-    public interface Refresh{
-        public void refresh();
-    }
-
-    int SAMLL = 0;
-    int LARGE = 1;
+    /**
+     * the images shown roll forward
+     */
     public void rollForward();
+
+    /**
+     * the images shown roll backward
+     */
     public void rollBackward();
-    public Bitmap[] getBitmap(int size);
-    public void setRefresh(Refresh refresh);
-    public void setImagePaths(List<String> paths);
+
+    /**
+     * get bitmaps
+     * @return
+     */
+    public Bitmap[] getBitmap();
+
+    /**
+     * use invalidate to invalidate the view
+     * @param invalidate
+     */
+    public void setInvalidate(RollImageView.InvalidateView invalidate);
+
+    /**
+     * set the dimen of view
+     * @param width
+     * @param height
+     */
     public void setDimen(int width, int height);
+
+
+    /**
+     * the image path to be show
+     * @param paths
+     */
+    public void setImagePaths(List<String> paths);
+
+    /**
+     * get large bitmap while static
+     */
+    public void loadCurrentLargeBitmap();
 }

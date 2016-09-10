@@ -28,10 +28,10 @@ public class DefaultCellCalculator implements CellCalculator {
         mCells = new Cell[mCnt];
         mAlphas = new float[mCnt];
         STATIC_ALPHA = new int[mCnt];
-        STATIC_ALPHA[0] = 0;
+        STATIC_ALPHA[mCnt - 1] = 0;
         int alphaUnit = (255 - FIRST_ALPHA) / (mCnt - 2);
-        for(int i = 1; i < mCnt; i++){
-            STATIC_ALPHA[i] = FIRST_ALPHA + (i - 1) * alphaUnit;
+        for(int i = mCnt - 2; i >= 0; i--){
+            STATIC_ALPHA[i] = FIRST_ALPHA + (mCnt - 2 - i) * alphaUnit;
         }
     }
 
@@ -59,7 +59,7 @@ public class DefaultCellCalculator implements CellCalculator {
         mWidhtIndent = (int)(WIDHT_INDENT * mViewWidth);
         mWidths = new int[mCnt];
         for(int i = 0; i < mCnt; i++){
-            mWidths[i] = mViewWidth - (mCnt - i) * mWidhtIndent;
+            mWidths[i] = mViewWidth - i * mWidhtIndent;
         }
         //每张图片的高度。
         //假如显示四张图，那么在上面会有三个高度落差，然后最底部保留一个高度落差，所以是mcnt-1
@@ -76,13 +76,13 @@ public class DefaultCellCalculator implements CellCalculator {
     private int calculateForward(float status){
         float scale = status / mImageHeight;
         LOG("scale " + scale + " mImageHeight " + mImageHeight + " status " + status);
-        for(int i = 0; i < mCnt - 1; i++){
-            mCells[i].setWidth(interpolate(scale * 3, mWidths[i], mWidths[i + 1]));
-            mCells[i].moveVertical(interpolate(scale * 10, 0, HEIGHT_INDENT));  //使得后面的图片迅速向前，向前的动画感更强
-            mCells[i].setAlpha((int)interpolate(scale, STATIC_ALPHA[i], STATIC_ALPHA[i + 1]));
+        for(int i = 1; i < mCnt; i++){
+            mCells[i].setWidth(interpolate(scale * 3, mWidths[i], mWidths[i - 1])); // *3 使得后面的宽度快速增大，经验值
+            mCells[i].moveVertical(interpolate(scale * 10, 0, HEIGHT_INDENT));  //*10使得后面的图片迅速向前，向前的动画感更强
+            mCells[i].setAlpha((int)interpolate(scale, STATIC_ALPHA[i], STATIC_ALPHA[i - 1]));
         }
-        mCells[mCnt - 1].moveVertical(status);
-        mCells[mCnt - 1].setAlpha((int)interpolate(scale, 255, 0));
+        mCells[0].moveVertical(status);
+        mCells[0].setAlpha((int)interpolate(scale, 255, 0));
         if(status >= mImageHeight / 3){
             return 1;
         } else {
@@ -92,15 +92,15 @@ public class DefaultCellCalculator implements CellCalculator {
 
     private void calculateBackward(float status){
         float scale = Math.abs(status / mImageHeight);
-        for(int i = 0; i < mCnt - 1; i++){
-            mCells[i].setWidth(interpolate(scale, mWidths[i + 1], mWidths[i]));
+        for(int i = 1; i < mCnt; i++){
+            mCells[i].setWidth(interpolate(scale, mWidths[i - 1], mWidths[i]));
             mCells[i].moveVertical(-scale * HEIGHT_INDENT);
-            mCells[i].setAlpha((int)interpolate(scale, STATIC_ALPHA[i + 1], STATIC_ALPHA[i]));
+            mCells[i].setAlpha((int)interpolate(scale, STATIC_ALPHA[i - 1], STATIC_ALPHA[i]));
         }
-        mCells[mCnt - 1].resetRect();
-        mCells[mCnt - 1].setHeight(mImageHeight);
-        mCells[mCnt - 1].moveVertical(status);
-        mCells[mCnt - 1].setAlpha((int)interpolate(scale, 0, 255));
+        mCells[0].resetRect();
+        mCells[0].setHeight(mImageHeight);
+        mCells[0].moveVertical(status);
+        mCells[0].setAlpha((int)interpolate(scale, 0, 255));
     }
 
     /**
@@ -110,7 +110,7 @@ public class DefaultCellCalculator implements CellCalculator {
         int top = -HEIGHT_INDENT;
         for(int i = 0; i < mCnt; i++){
             RectF rectF = new RectF(0,0,0,0);
-            rectF.top = top + i * HEIGHT_INDENT;
+            rectF.top = top + (mCnt - 1 - i) * HEIGHT_INDENT;
             rectF.bottom = rectF.top + mImageHeight;
             mCells[i] = new Cell(rectF, STATIC_ALPHA[i]);
             mCells[i].setWidth(mWidths[i]);

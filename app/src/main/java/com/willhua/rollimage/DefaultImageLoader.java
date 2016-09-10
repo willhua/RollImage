@@ -2,8 +2,6 @@ package com.willhua.rollimage;
 
 import android.graphics.Bitmap;
 import android.util.Log;
-import android.util.LruCache;
-import android.view.View;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -18,6 +16,8 @@ public class DefaultImageLoader implements ImageLoader {
         public void decodeFinish(String path, Bitmap bitmap);
     }
 
+    public static final String NO_PATH = "no_path";
+
     private int mSmallWidth = 100;
     private int mSmallHeight = 80;
     private int mBigWidht = 300;
@@ -29,33 +29,42 @@ public class DefaultImageLoader implements ImageLoader {
     private List<String> mCurrentPaths = new ArrayList<>();
     private int mCurrentIndex;
     private Bitmap[] mCurrentBitmaps;
+    private RollImageView.InvalidateView mInvalidateView;
 
     private BitmapCache mBitmapCache;
-    private Refresh mRefresh;
     private DecodeFinish mDecodeFinish = new DecodeFinish() {
         @Override
         public void decodeFinish(String path, Bitmap bitmap) {
             LOG("decodeFinish " + path);
             if(mCurrentPaths.contains(path)){
                 LOG("decodeFinish refresh " + path);
-                mRefresh.refresh();
+                if(mInvalidateView != null){
+                    mInvalidateView.invalidateView();
+                }
             }
         }
     };
 
+    @Override
+    public void loadCurrentLargeBitmap() {
+        for(int i = 0; i < 2; i++){
+            mBitmapCache.getLargeBitmap(mCurrentPaths.get(i));
+        }
+    }
 
     public DefaultImageLoader(int showcnt){
         mShowCnt = showcnt;
-        mCurrentIndex = mShowCnt;
+        mCurrentIndex = 0;
         mCurrentBitmaps = new Bitmap[mShowCnt];
         mBitmapCache = new BitmapCache(mDecodeFinish);
     }
 
     @Override
     public void rollForward() {
+        LOG("rollForward");
         mCurrentIndex++;
-        if(mCurrentIndex > mImagesCnt){
-            mCurrentIndex = mImagesCnt;
+        if(mCurrentIndex > mImagesCnt - 1){
+            mCurrentIndex = mImagesCnt - 1;
         }
         setCurrentPaths();
     }
@@ -63,54 +72,63 @@ public class DefaultImageLoader implements ImageLoader {
     @Override
     public void rollBackward() {
         mCurrentIndex--;
-        if(mCurrentIndex < mShowCnt){
-            mCurrentIndex = mShowCnt;
+        if(mCurrentIndex < 0){
+            mCurrentIndex = 0;
         }
         setCurrentPaths();
     }
 
     @Override
-    public Bitmap[] getBitmap(int size) {
-        LOG("getBitmap");
+    public Bitmap[] getBitmap() {
         if(mCurrentPaths != null){
             LOG("getBitmap paths nut null");
-            for(int i = mCurrentIndex, j = 0; j < mShowCnt; j++, i--){
-                mCurrentBitmaps[j] = mBitmapCache.getBimap(mAllImagePaths[i], ImageLoader.SAMLL);
+            for(int i = mCurrentIndex, j = 0; j < mShowCnt; j++, i++){
+                if(i >= 0 && i < mImagesCnt){
+                    mCurrentBitmaps[j] = mBitmapCache.getBimap(mAllImagePaths[i]);
+                } else{
+                    mCurrentBitmaps[j] = mBitmapCache.getBimap(NO_PATH);
+                }
             }
         }
         return  mCurrentBitmaps;
     }
 
-    private void setCurrentPaths(){
-        mCurrentPaths.clear();
-        for(int i = mCurrentIndex, j = 0; j < mShowCnt; i--, j++){
-            mCurrentPaths.add(mAllImagePaths[i]);
-        }
-        LOG(mCurrentPaths.toString());
-    }
-
     @Override
-    public void setRefresh(Refresh refresh){
-        mRefresh = refresh;
-    }
-
-    @Override
-    public void setImagePaths(List<String> paths) {
-        mImagesCnt = paths.size();
-        mAllImagePaths = new String[mImagesCnt];
-        paths.toArray(mAllImagePaths);
-        mCurrentIndex = mShowCnt;
-        setCurrentPaths();
+    public void setInvalidate(RollImageView.InvalidateView invalidate) {
+        mInvalidateView = invalidate;
     }
 
     @Override
     public void setDimen(int width, int height) {
         mBigWidht = width;
         mBigHeight = height;
-        mSmallWidth = width / 16;
-        mSmallHeight = height / 16;
+        mSmallWidth = mBigWidht / 16;
+        mSmallHeight = mBigHeight / 16;
         if(mBitmapCache != null){
             mBitmapCache.setDimen(mSmallWidth, mSmallHeight, mBigWidht, mBigHeight);
+        }
+    }
+
+    private void setCurrentPaths(){
+        mCurrentPaths.clear();
+        for(int i = mCurrentIndex, j = 0; j < mShowCnt; j++){
+            if(i >= 0 && i < mImagesCnt){
+                mCurrentPaths.add(mAllImagePaths[i++]);
+            } else {
+                mCurrentPaths.add(NO_PATH);
+            }
+        }
+        LOG(mCurrentPaths.toString());
+    }
+
+    @Override
+    public void setImagePaths(List<String> paths) {
+        if(paths != null){
+            mImagesCnt = paths.size();
+            mAllImagePaths = new String[mImagesCnt];
+            paths.toArray(mAllImagePaths);
+            mCurrentIndex = 0;
+            setCurrentPaths();
         }
     }
 

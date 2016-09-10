@@ -6,7 +6,6 @@ import android.util.Log;
 import android.util.LruCache;
 
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -16,28 +15,28 @@ import java.util.concurrent.TimeUnit;
  */
 public class BitmapCache {
 
-    private int mSmallWidth;
-    private int mSmallHeight;
-    private int mLargeWidth;
-    private int mLargeHeight;
+    private int mSmallWidth = 100;
+    private int mSmallHeight = 70;
+    private int mLargeWidth = 800;
+    private int mLargeHeight = 600;
 
     private Bitmap mDefaultBitmap;
 
     private DefaultImageLoader.DecodeFinish mDecodeFinish;
 
-    private ExecutorService mExecutorService = new ThreadPoolExecutor(2,4,1, TimeUnit.MINUTES, new BlockingLifeQueue<Runnable>());
-
-    private LruCache<String, Bitmap> mBitmapCache = new LruCache<String, Bitmap>(8 * 1024 * 1024){
+    private ExecutorService mExecutorService = new ThreadPoolExecutor(1, 5, 1, TimeUnit.MINUTES,
+            new LinkedBlockingDeque<Runnable>());
+    private LruCache<String, Bitmap> mBitmapCache = new LruCache<String, Bitmap>(80 * 1024 * 1024){
         @Override
         protected int sizeOf(String path, Bitmap bitmap){
-            return bitmap.getRowBytes() * bitmap.getHeight();
+            return  bitmap.getRowBytes() * bitmap.getHeight();
         }
     };
 
     public BitmapCache(DefaultImageLoader.DecodeFinish decodeFinish){
         mDecodeFinish = decodeFinish;
         mDefaultBitmap = Bitmap.createBitmap(10, 10, Bitmap.Config.ARGB_8888);
-        mDefaultBitmap.eraseColor(0);
+        mDefaultBitmap.eraseColor(0x434343);
     }
 
     public void setDimen(int smallWidht, int smallHeight, int largeWidht, int largeHeight){
@@ -45,28 +44,39 @@ public class BitmapCache {
         mSmallHeight = smallHeight;
         mLargeWidth = largeWidht;
         mLargeHeight = largeHeight;
+        LOG("setDimen " + mSmallWidth + " " + mSmallHeight + " " + mLargeWidth + " " + mLargeHeight);
     }
 
-    public Bitmap getBimap(String path, int size){
-        LOG("getBitmap "+ path);
-        LOG("cache " + mBitmapCache.size());
-        if(size == ImageLoader.SAMLL){
-            Bitmap bitmap = mBitmapCache.get(path);
-            if(bitmap == null || bitmap.isRecycled()){
-                bitmap = mDefaultBitmap;
-                LOG("getBitmap  submit "+ path);
-                mExecutorService.submit(new DecodeTask(path, mSmallWidth, mSmallHeight));
-            }
-            return bitmap;
-        } else if(size == ImageLoader.LARGE){
-            Bitmap bitmap = mBitmapCache.get(path);
-            if(bitmap == null || bitmap.isRecycled() || bitmap.getWidth() < mLargeWidth){
-                bitmap = mDefaultBitmap;
-                mExecutorService.submit(new DecodeTask(path, mLargeWidth, mLargeHeight));
-            }
-            return bitmap;
+    public Bitmap getLargeBitmap(String path){
+        if(DefaultImageLoader.NO_PATH.equals(path)){
+            return mDefaultBitmap;
         }
-        return mDefaultBitmap;
+        LOG("getlarge " + path);
+        Bitmap bitmap = mBitmapCache.get(path);
+        if(bitmap == null || bitmap.isRecycled()){
+            bitmap = mDefaultBitmap;
+            LOG("getlarge null " + path + " " + mLargeWidth);
+            mExecutorService.submit(new DecodeTask(path, mLargeWidth, mLargeHeight));
+        } else if(bitmap.getWidth() < mLargeWidth){
+            LOG("getlarge < " + path + " " + mLargeWidth);
+            mExecutorService.submit(new DecodeTask(path, mLargeWidth, mLargeHeight));
+        }
+        return  bitmap;
+    }
+
+    public Bitmap getBimap(String path){
+        LOG("getBitmap "+ path);
+        if(DefaultImageLoader.NO_PATH.equals(path)){
+            return mDefaultBitmap;
+        }
+        LOG("cache " + mBitmapCache.size());
+        Bitmap bitmap = mBitmapCache.get(path);
+        if(bitmap == null || bitmap.isRecycled()){
+            bitmap = mDefaultBitmap;
+            LOG("getBitmap  submit "+ path);
+            mExecutorService.submit(new DecodeTask(path, mSmallWidth, mSmallHeight));
+        }
+        return bitmap;
     }
 
     private class DecodeTask implements Runnable{
@@ -84,6 +94,14 @@ public class BitmapCache {
         @Override
         public void run() {
             LOG("start decode " + mPath);
+            Bitmap bitmapOrigin = null;
+            synchronized (BitmapCache.this.mBitmapCache){
+                bitmapOrigin = mBitmapCache.get(mPath);
+            }
+            if(bitmapOrigin != null && bitmapOrigin.getWidth() >= mWidth && bitmapOrigin.getHeight() >= mHeight){
+                LOG("has large one " + mPath);
+                return;
+            }
             BitmapFactory.Options options = new BitmapFactory.Options();
             options.inJustDecodeBounds = true;
             BitmapFactory.decodeFile(mPath, options);
@@ -91,9 +109,15 @@ public class BitmapCache {
             options.inJustDecodeBounds = false;
             Bitmap bitmap = BitmapFactory.decodeFile(mPath, options);
             if(bitmap != null){
-               synchronized (BitmapCache.this){
+               synchronized (BitmapCache.this.mBitmapCache){
+                   bitmapOrigin = mBitmapCache.get(mPath);
+                   if(bitmapOrigin != null && bitmap.getWidth() < bitmapOrigin.getWidth()){
+                       LOG("has large one " + mPath);
+                       return;
+                   }
+                   LOG("setdimen load bitmap " + bitmap.getWidth() + " " + bitmap.getHeight());
                    mBitmapCache.put(mPath, bitmap);
-                   LOG("run put " + mPath);
+                   LOG("run put " + mPath + " " + bitmap.getWidth() + " need " + mWidth);
                    LOG("mBitmapCache " + mBitmapCache.size());
                    if(mDecodeFinish != null){
                         mDecodeFinish.decodeFinish(mPath, bitmap);
@@ -107,9 +131,10 @@ public class BitmapCache {
         int oriW = options.outWidth;
         int oriH = options.outHeight;
         int sample = 1;
-        while(oriH / sample / 2 > height && oriW / sample / 2 > width){
+        while(oriH / sample / 2 >= (int)(height * 0.8) && oriW / sample / 2 >= (int)(width * 0.8)){
             sample *= 2;
         }
+        LOG("getSample " + oriW + " " + oriH + " " + width + " " + height + "   " + sample);
         return  sample;
     }
 

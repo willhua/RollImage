@@ -54,11 +54,6 @@ public class Cell {
         init();
     }
 
-    public void setRectF(RectF rectF){
-        mRectF = rectF;
-        init();
-    }
-
     public void setAlpha(int alpha){
         mAlpha = alpha;
     }

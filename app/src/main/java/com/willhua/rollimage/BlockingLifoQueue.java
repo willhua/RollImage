@@ -11,10 +11,10 @@ import java.util.concurrent.TimeUnit;
 /**
  * Created by willhua on 2016/9/8.
  */
-public class BlockingLifeQueue<T> implements BlockingQueue<T> {
+public class BlockingLifoQueue<T> implements BlockingQueue<T> {
     private final BlockingDeque<T> deque;
 
-    public BlockingLifeQueue() {
+    public BlockingLifoQueue() {
         deque = new LinkedBlockingDeque<T>();
     }
 

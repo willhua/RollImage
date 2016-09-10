@@ -21,6 +21,9 @@ import java.util.concurrent.Executors;
  */
 public class RollImageView extends View {
 
+    public interface InvalidateView{
+        void invalidateView();
+    }
 
     public static final int SHOW_CNT = 5;
     private static final int MSG_INVALATE = 0;
@@ -37,10 +40,12 @@ public class RollImageView extends View {
     private int mWidth = DEFALT_WIDHT;
     private int mHeight = DEFALT_HEIGHT;
 
+    private boolean mFirstDraw = true;
     private Paint mPaint;
     private Bitmap mCanvasBitmap;
     private int mRollResult = 0;
     private GestureDetector mGestureDetector;
+    private static boolean mIsFling = false;
 
     private Handler mHandler = new Handler() {
         @Override
@@ -109,11 +114,14 @@ public class RollImageView extends View {
         mGestureDetector.onTouchEvent(event);
         switch (event.getAction()) {
             case MotionEvent.ACTION_UP:
-                if (mRollResult == 1) {
-                    mImageLoader.rollForward();
+                LOG("OnGestureListener ACTION_UP " );
+                if(!mIsFling){
+                    if(mRollResult == 1){
+                        mImageLoader.rollForward();
+                    }
+                    mCellCalculator.setStatic();
+                    mImageLoader.loadCurrentLargeBitmap();
                 }
-                mCellCalculator.setStatic();
-                invalidate();
                 break;
             default:
                 break;
@@ -124,12 +132,16 @@ public class RollImageView extends View {
     @Override
     public void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-        LOG("ondraw");
-        canvas.drawARGB(255, 0, 0, 0);
-        Bitmap[] bitmaps = mImageLoader.getBitmap(ImageLoader.SAMLL);
+        if(mFirstDraw){
+            if(mImageLoader != null){
+                mImageLoader.loadCurrentLargeBitmap();
+            }
+            mFirstDraw = false;
+        }
+        Bitmap[] bitmaps = mImageLoader.getBitmap();
         Cell[] cells = mCellCalculator.getCells();
         canvas.translate(getWidth() / 2, 0);
-        for (int i = 0; i < SHOW_CNT; i++) {
+        for (int i = SHOW_CNT - 1; i >= 0; i--) {
             Bitmap bitmap = bitmaps[i];
             Cell cell = cells[i];
             if (bitmap != null && !bitmap.isRecycled()) {
@@ -145,6 +157,7 @@ public class RollImageView extends View {
             mAllImagePaths = paths;
             if (mImageLoader != null) {
                 mImageLoader.setImagePaths(mAllImagePaths);
+                mImageLoader.loadCurrentLargeBitmap();
             }
         }
     }
@@ -152,10 +165,9 @@ public class RollImageView extends View {
     public void setImageLoader(ImageLoader loader) {
         if (loader != null) {
             mImageLoader = loader;
-            mImageLoader.setRefresh(new ImageLoader.Refresh() {
+            mImageLoader.setInvalidate(new InvalidateView() {
                 @Override
-                public void refresh() {
-                    LOG("refresh");
+                public void invalidateView() {
                     mHandler.sendEmptyMessage(MSG_INVALATE);
                 }
             });
@@ -185,7 +197,9 @@ public class RollImageView extends View {
         @Override
         public boolean onDown(MotionEvent e) {
             LOG("OnGestureListener onDown");
+            mIsFling = false;
             mScrollDistance = 0;
+            mRollResult = 0;
             return true;
         }
 
@@ -222,6 +236,7 @@ public class RollImageView extends View {
                 if (mExecutorService == null) {
                     mExecutorService = Executors.newSingleThreadExecutor();
                 }
+                mIsFling = true;
                 mExecutorService.submit(new FlingTask(velocityY));
             }
             return true;
@@ -231,25 +246,35 @@ public class RollImageView extends View {
 
             float mVelocity;
             float mViewHeight;
+            int mSleepTime;
 
             FlingTask(float velocity) {
-                mVelocity = velocity / 2;
+                mVelocity = velocity / 4;
                 mViewHeight = RollImageView.this.getHeight() / 2;
+                mSleepTime = (int)(4000 / velocity * 100); //the slower velocity of fling, the longer interval for roll
             }
 
             @Override
             public void run() {
                 int i = 0;
-                while (mVelocity > mViewHeight) {
-                    mCellCalculator.setStatus(0, mViewHeight);
-                    mHandler.sendEmptyMessage(MSG_INVALATE);
-                    mVelocity -= mViewHeight;
-                    if (((i++) & 1) == 0) { //roll forward once for every two setStatus
-                        mImageLoader.rollForward();
+                try{
+                    while (mVelocity > mViewHeight) {
+                        mCellCalculator.setStatus(0, mViewHeight);
+                        mHandler.sendEmptyMessage(MSG_INVALATE);
+                        mVelocity -= mViewHeight;
+                        if (((i++) & 1) == 0) { //roll forward once for every two setStatus
+                            mImageLoader.rollForward();
+                        }
+                        Thread.sleep(mSleepTime);
                     }
+                    mCellCalculator.setStatic();
+                    mImageLoader.loadCurrentLargeBitmap();
+                    mHandler.sendEmptyMessage(MSG_INVALATE);
+                } catch(Exception e){
+
+                } finally{
+
                 }
-                mCellCalculator.setStatic();
-                mHandler.sendEmptyMessage(MSG_INVALATE);
             }
         }
     }
