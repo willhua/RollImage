@@ -26,7 +26,7 @@ public class BitmapCache {
 
     private ExecutorService mExecutorService = new ThreadPoolExecutor(1, 5, 1, TimeUnit.MINUTES,
             new LinkedBlockingDeque<Runnable>());
-    private LruCache<String, Bitmap> mBitmapCache = new LruCache<String, Bitmap>(80 * 1024 * 1024){
+    private LruCache<String, Bitmap> mBitmapCache = new LruCache<String, Bitmap>(30 * 1024 * 1024){
         @Override
         protected int sizeOf(String path, Bitmap bitmap){
             return  bitmap.getRowBytes() * bitmap.getHeight();
@@ -36,7 +36,7 @@ public class BitmapCache {
     public BitmapCache(DefaultImageLoader.DecodeFinish decodeFinish){
         mDecodeFinish = decodeFinish;
         mDefaultBitmap = Bitmap.createBitmap(10, 10, Bitmap.Config.ARGB_8888);
-        mDefaultBitmap.eraseColor(0x434343);
+        mDefaultBitmap.eraseColor(0x66434343);
     }
 
     public void setDimen(int smallWidht, int smallHeight, int largeWidht, int largeHeight){

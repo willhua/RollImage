@@ -36,7 +36,7 @@ public class RollImageView extends View {
     private ImageLoader mImageLoader;
     private CellCalculator mCellCalculator;
 
-    //实际绘制区域大小
+    //the real draw area with the padding removed
     private int mWidth = DEFALT_WIDHT;
     private int mHeight = DEFALT_HEIGHT;
 
@@ -45,7 +45,10 @@ public class RollImageView extends View {
     private Bitmap mCanvasBitmap;
     private int mRollResult = 0;
     private GestureDetector mGestureDetector;
+    //the fling is triggered
     private static boolean mIsFling = false;
+    //has roll backward during fling
+    private static boolean mScrollRollBack = false;
 
     private Handler mHandler = new Handler() {
         @Override
@@ -114,11 +117,13 @@ public class RollImageView extends View {
         mGestureDetector.onTouchEvent(event);
         switch (event.getAction()) {
             case MotionEvent.ACTION_UP:
-                LOG("OnGestureListener ACTION_UP " );
                 if(!mIsFling){
-                    if(mRollResult == 1){
+                    if(mRollResult == CellCalculator.ROLL_FORWARD){
                         mImageLoader.rollForward();
+                    } else if (mRollResult == CellCalculator.ROLL_BACKWARD && !mScrollRollBack){
+                        mImageLoader.rollBackward();
                     }
+                    LOG("OnGestureListener ACTION_UP setstatic " );
                     mCellCalculator.setStatic();
                     mImageLoader.loadCurrentLargeBitmap();
                 }
@@ -131,6 +136,7 @@ public class RollImageView extends View {
 
     @Override
     public void onDraw(Canvas canvas) {
+        LOG("ondraw start");
         super.onDraw(canvas);
         if(mFirstDraw){
             if(mImageLoader != null){
@@ -188,10 +194,10 @@ public class RollImageView extends View {
         Log.d("RollImageView", "willhua:  " + msg);
     }
 
-
     private class GestureListener implements GestureDetector.OnGestureListener {
         private static final int MIN_FLING = 1500;
         private float mScrollDistance;
+
         private ExecutorService mExecutorService;
 
         @Override
@@ -200,6 +206,7 @@ public class RollImageView extends View {
             mIsFling = false;
             mScrollDistance = 0;
             mRollResult = 0;
+            mScrollRollBack = false;
             return true;
         }
 
@@ -217,8 +224,15 @@ public class RollImageView extends View {
         @Override
         public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
             mScrollDistance += distanceY;
+            if(mScrollDistance > 0 && !mScrollRollBack){
+                mImageLoader.rollBackward();
+                mScrollRollBack = true;
+            } else if(mScrollDistance < 0 && mScrollRollBack){
+                mImageLoader.rollForward();
+                mScrollRollBack = false;
+            }
             LOG("OnGestureListener onScroll " + distanceY + " all" + mScrollDistance);
-            mRollResult = mCellCalculator.setStatus(0, -mScrollDistance);
+            mRollResult = mCellCalculator.setStatus(-mScrollDistance);
             invalidate();
             return true;
         }
@@ -231,8 +245,8 @@ public class RollImageView extends View {
 
         @Override
         public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
-            LOG("OnGestureListener onFling " + velocityY);
-            if (velocityY > MIN_FLING) {
+            if (Math.abs(velocityY) > MIN_FLING) {
+                LOG("OnGestureListener onFling " + velocityY);
                 if (mExecutorService == null) {
                     mExecutorService = Executors.newSingleThreadExecutor();
                 }
@@ -247,11 +261,13 @@ public class RollImageView extends View {
             float mVelocity;
             float mViewHeight;
             int mSleepTime;
+            boolean mRollBackward;
 
             FlingTask(float velocity) {
-                mVelocity = velocity / 4;
+                mRollBackward = velocity < 0 ? true : false;
+                mVelocity = Math.abs(velocity / 4);
                 mViewHeight = RollImageView.this.getHeight() / 2;
-                mSleepTime = (int)(4000 / velocity * 100); //the slower velocity of fling, the longer interval for roll
+                mSleepTime = (int)(4000 / Math.abs(velocity) * 100); //the slower velocity of fling, the longer interval for roll
             }
 
             @Override
@@ -259,11 +275,16 @@ public class RollImageView extends View {
                 int i = 0;
                 try{
                     while (mVelocity > mViewHeight) {
-                        mCellCalculator.setStatus(0, mViewHeight);
+                        mCellCalculator.setStatus(mRollBackward ? -mViewHeight : mViewHeight);
                         mHandler.sendEmptyMessage(MSG_INVALATE);
+                        //determines the count of roll. The using of mViewHeight has no strictly logical
                         mVelocity -= mViewHeight;
                         if (((i++) & 1) == 0) { //roll forward once for every two setStatus
-                            mImageLoader.rollForward();
+                            if(mRollBackward){
+                                mImageLoader.rollBackward();
+                            }else {
+                                mImageLoader.rollForward();
+                            }
                         }
                         Thread.sleep(mSleepTime);
                     }

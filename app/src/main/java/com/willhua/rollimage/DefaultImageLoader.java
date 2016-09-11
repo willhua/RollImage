@@ -71,6 +71,7 @@ public class DefaultImageLoader implements ImageLoader {
 
     @Override
     public void rollBackward() {
+        LOG("rollBackward");
         mCurrentIndex--;
         if(mCurrentIndex < 0){
             mCurrentIndex = 0;

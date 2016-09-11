@@ -41,11 +41,11 @@ public class DefaultCellCalculator implements CellCalculator {
     }
 
     @Override
-    public int setStatus(float speed, float distance) {
+    public int setStatus(float distance) {
         if(distance > 0){
             return calculateForward(distance);
         } else if(distance < 0){
-            calculateBackward(distance);
+            return calculateBackward(distance);
         } else{
             initCells();
         }
@@ -84,13 +84,13 @@ public class DefaultCellCalculator implements CellCalculator {
         mCells[0].moveVertical(status);
         mCells[0].setAlpha((int)interpolate(scale, 255, 0));
         if(status >= mImageHeight / 3){
-            return 1;
+            return ROLL_FORWARD;
         } else {
             return 0;
         }
     }
 
-    private void calculateBackward(float status){
+    private int calculateBackward(float status){
         float scale = Math.abs(status / mImageHeight);
         for(int i = 1; i < mCnt; i++){
             mCells[i].setWidth(interpolate(scale, mWidths[i - 1], mWidths[i]));
@@ -98,9 +98,15 @@ public class DefaultCellCalculator implements CellCalculator {
             mCells[i].setAlpha((int)interpolate(scale, STATIC_ALPHA[i - 1], STATIC_ALPHA[i]));
         }
         mCells[0].resetRect();
+        mCells[0].setWidth(mWidths[0]);
         mCells[0].setHeight(mImageHeight);
-        mCells[0].moveVertical(status);
+        mCells[0].moveVertical(mImageHeight + status);
         mCells[0].setAlpha((int)interpolate(scale, 0, 255));
+        if(-status >= mImageHeight / 3){
+            return ROLL_BACKWARD;
+        } else {
+            return 0;
+        }
     }
 
     /**
