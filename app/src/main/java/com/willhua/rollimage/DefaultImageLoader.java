@@ -47,8 +47,10 @@ public class DefaultImageLoader implements ImageLoader {
 
     @Override
     public void loadCurrentLargeBitmap() {
-        for(int i = 0; i < 2; i++){
-            mBitmapCache.getLargeBitmap(mCurrentPaths.get(i));
+        for(int i = mCurrentIndex - 1; i < mCurrentIndex + 2; i++){
+            if(i >= 0 && i < mImagesCnt - 1){
+                mBitmapCache.getLargeBitmap(mAllImagePaths[i]);
+            }
         }
     }
 
