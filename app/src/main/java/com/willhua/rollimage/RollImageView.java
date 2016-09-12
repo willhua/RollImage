@@ -145,9 +145,9 @@ public class RollImageView extends View {
             mFirstDraw = false;
         }
         Bitmap[] bitmaps = mImageLoader.getBitmap();
-        Cell[] cells = mCellCalculator.getCells();
+        Cell[] cells = mCellCalculator.getCells();  //得到每张Image的显示区域与透明度
         canvas.translate(getWidth() / 2, 0);
-        for (int i = SHOW_CNT - 1; i >= 0; i--) {
+        for (int i = SHOW_CNT - 1; i >= 0; i--) { //从最底层的Image开始绘制
             Bitmap bitmap = bitmaps[i];
             Cell cell = cells[i];
             if (bitmap != null && !bitmap.isRecycled()) {

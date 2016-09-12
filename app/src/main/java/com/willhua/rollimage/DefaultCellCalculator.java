@@ -93,8 +93,8 @@ public class DefaultCellCalculator implements CellCalculator {
     private int calculateBackward(float status){
         float scale = Math.abs(status / mImageHeight);
         for(int i = 1; i < mCnt; i++){
-            mCells[i].setWidth(interpolate(scale, mWidths[i - 1], mWidths[i]));
-            mCells[i].moveVertical(-scale * HEIGHT_INDENT);
+            mCells[i].setWidth(interpolate(scale * 3, mWidths[i - 1], mWidths[i]));
+            mCells[i].moveVertical(interpolate(scale * 10, 0, HEIGHT_INDENT));
             mCells[i].setAlpha((int)interpolate(scale, STATIC_ALPHA[i - 1], STATIC_ALPHA[i]));
         }
         mCells[0].resetRect();
@@ -126,6 +126,8 @@ public class DefaultCellCalculator implements CellCalculator {
     private float interpolate(float scale, float start, float end){
         if(scale > 1){
             scale = 1;
+        } else if(scale < -1){
+            scale = -1;
         }
         return start + scale * (end - start);
     }

@@ -24,9 +24,9 @@ public class BitmapCache {
 
     private DefaultImageLoader.DecodeFinish mDecodeFinish;
 
-    private ExecutorService mExecutorService = new ThreadPoolExecutor(1, 5, 1, TimeUnit.MINUTES,
+    private ExecutorService mExecutorService = new ThreadPoolExecutor(5, 5, 1, TimeUnit.MINUTES,
             new LinkedBlockingDeque<Runnable>());
-    private LruCache<String, Bitmap> mBitmapCache = new LruCache<String, Bitmap>(30 * 1024 * 1024){
+    private LruCache<String, Bitmap> mBitmapCache = new LruCache<String, Bitmap>(40 * 1024 * 1024){
         @Override
         protected int sizeOf(String path, Bitmap bitmap){
             return  bitmap.getRowBytes() * bitmap.getHeight();

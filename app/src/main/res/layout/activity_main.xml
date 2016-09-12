@@ -19,5 +19,5 @@
         android:id="@+id/roll"
         android:layout_below="@+id/tv"
         android:layout_width="match_parent"
-        android:layout_height="500px" />
+        android:layout_height="700px" />
 </RelativeLayout>
